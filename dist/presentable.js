@@ -43,9 +43,6 @@ module.exports = {
             li.innerHTML = '<div><a class="title" href="'+ url +'">' + tocArray[i].title + '</a> <a class="page" href="'+ url +'" >' + tocArray[i].page + '</a></div>';
             ol.appendChild(li);
 
-            if (tocArray[i].nested) {
-                this.createRecursive(li, tocArray[i].nested);
-            }
         }
         return listParent;
     }
@@ -182,10 +179,15 @@ json.frameworks.revealjs = {
         // I'm getting away with it here because there is only one level of children
         childSections = slide.querySelectorAll('section');
         hasChildren = childSections.length > 0;
-
+	
         slideData = {};
         slideData.index = slideIndex;
         slideData.title = this.slideTitleRecursive(slide);
+
+	if ( slide.className === "no-toc" ) {
+	    return;
+	}
+	
         if (this.isTocSlide(slide)) {
             slideData.toc = "true";
         }
@@ -195,11 +197,6 @@ json.frameworks.revealjs = {
             return;
         }
 
-        slideData.nested = [];
-        sectionCount = childSections.length;
-        for (i = 0; i < sectionCount; i++) {
-            this.processSectionRecursive( (slideIndex + '/' + i), childSections[i], slideData.nested );
-        }
     },
 
     /**
@@ -498,12 +495,6 @@ var main = {
             if (tocArray[i].toc) {
                 return tocArray[i];
             }
-            if (tocArray[i].nested) {
-                var tocData = main.tocSlideDataRecursive(tocArray[i].nested);
-                if (tocData) {
-                    return tocData;
-                }
-            }
         }
     },
 
@@ -524,9 +515,6 @@ var main = {
                 title = tocArray[i].title;
             }
 
-            if (tocArray[i].nested) {
-                title = main.slideTitlesRecursive(index, tocArray[i].nested, title);
-            }
         }
         return title;
     },
