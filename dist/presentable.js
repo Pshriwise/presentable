@@ -38,8 +38,12 @@ module.exports = {
                 continue;
             }
 
+	    if ( tocArray[i].toc ) {
+		continue;
+	    }
+	    
             li = document.createElement("li");
-            url = this.HASH_STRING + tocArray[i].index;
+            url = this.HASH_STRING + tocArray[i].linkind;
             li.innerHTML = '<div><a class="title" href="'+ url +'">' + tocArray[i].title + '</a> <a class="page" href="'+ url +'" >' + tocArray[i].page + '</a></div>';
             ol.appendChild(li);
 
@@ -145,17 +149,34 @@ json.frameworks.revealjs = {
         tocArray = [];
 
         sectionCount = sections.length;
+        offset = this.countNoToc();
         for (i = 0; i < sectionCount; i++) {
-            this.processSectionRecursive(i, sections[i], tocArray);
+	    if ( !this.noToc(sections[i]) || this.isTocSlide(sections[i]) ) {
+		this.processSectionRecursive(i-offset, offset, sections[i], tocArray);
+	    }
         }
-
+	
         this.removeNestedDuplicatesByTitles(tocArray);
         this.removeUntitledFirstChild(tocArray);
         this.setPageNumberRecursive(tocArray);
 
         return tocArray;
     },
+    countNoToc: function() {
+        slides = document.querySelectorAll(this.SLIDE_SEARCH_STRING);
+	slideCount = slides.length;
+	count = 1; 
 
+	for (i = 0; i < slideCount; i++) {
+	    if ( this.noToc(slides[i]) && !this.isTocSlide(slides[i]) ) {
+		count++;
+	    }
+	}
+	return count;
+    },
+    noToc: function(slide) {
+        return (slide.className === "no-toc");
+    },
     isTocSlide: function(slide) {
         return util.querySelectorChild(slide, this.TOC_CONTAINER);
     },
@@ -172,7 +193,7 @@ json.frameworks.revealjs = {
      *    ** Both assigned "Untitled slide", child omitted
      *    ** removeNestedDupicatesByTitles()
      */
-    processSectionRecursive: function(slideIndex, slide, tocArray) {
+    processSectionRecursive: function(slideIndex, offset, slide, tocArray) {
         var slideData, sectionCount, childSections, hasChildren, i;
 
         // Actually returns all child sections, not just immediate children
@@ -182,12 +203,9 @@ json.frameworks.revealjs = {
 	
         slideData = {};
         slideData.index = slideIndex;
+	slideData.linkind = slideIndex + offset;
         slideData.title = this.slideTitleRecursive(slide);
 
-	if ( slide.className === "no-toc" ) {
-	    return;
-	}
-	
         if (this.isTocSlide(slide)) {
             slideData.toc = "true";
         }
